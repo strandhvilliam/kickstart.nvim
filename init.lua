@@ -88,6 +88,15 @@ do
 
   -- [[ Basic Keymaps ]]
   --  See `:help vim.keymap.set()`
+  -- VS Code-style save
+  vim.keymap.set({ 'n', 'i', 'v' }, '<D-s>', '<cmd>write<CR>', { desc = 'Save file' })
+
+  -- Allows <C-d> and <C-u> to keep cursor in middle
+  vim.keymap.set("n", "<C-j>", "jzz")
+  vim.keymap.set("n", "<C-k>", "kzz")
+  -- Makes Search terms stay in vertical middle
+  vim.keymap.set('n', 'n', 'nzzzv')
+  vim.keymap.set('n', 'N', 'Nzzzv')
 
   -- Clear highlights on search when pressing <Esc> in normal mode
   --  See `:help hlsearch`
@@ -118,6 +127,16 @@ do
   }
 
   vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+
+  -- Macro recording: q/Q are used by Harpoon (see lua/custom/plugins/harpoon.lua)
+  vim.keymap.set('n', '<leader>mq', function()
+    if vim.fn.reg_recording() ~= '' then
+      vim.cmd.normal { 'q', bang = true }
+    else
+      vim.cmd.normal { 'qq', bang = true }
+    end
+  end, { desc = 'Macro: toggle record (q register)' })
+  vim.keymap.set('n', '<leader>mp', '@q', { desc = 'Macro: play q register' })
 
   -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
   -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -310,7 +329,6 @@ do
   -- Like many other themes, this one has different styles, and you could load
   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
   vim.cmd.colorscheme 'tokyonight-night'
-
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }
   require('todo-comments').setup { signs = false }
@@ -888,5 +906,4 @@ do
   require 'custom.plugins'
 end
 
--- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
