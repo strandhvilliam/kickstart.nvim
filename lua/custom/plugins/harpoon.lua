@@ -18,3 +18,4 @@ end
 
 vim.keymap.set('n', '<C-[>', function() harpoon:list():prev() end, { desc = 'Harpoon: previous file' })
 vim.keymap.set('n', '<C-]>', function() harpoon:list():next() end, { desc = 'Harpoon: next file' })
+

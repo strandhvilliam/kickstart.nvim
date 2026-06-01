@@ -70,6 +70,34 @@ require('yazi').setup {
   -- nvim . / :edit dir/ opens yazi instead of netrw
   open_for_directories = true,
   yazi_floating_window_border = 'rounded',
+  set_keymappings_function = function(yazi_buffer, config, context)
+    local helpers = require 'yazi.keybinding_helpers'
+    local utils = require 'yazi.utils'
+
+    vim.keymap.set('t', '<C-f>', function()
+      helpers.select_current_file_and_close_yazi(config, {
+        api = context.api,
+        on_file_opened = function(chosen_file)
+          local search_dir = utils.dir_of(chosen_file):make_relative(vim.uv.cwd())
+          require('telescope.builtin').find_files {
+            cwd = search_dir,
+            prompt_title = 'Files in ' .. search_dir,
+          }
+        end,
+        on_multiple_files_opened = function(chosen_files)
+          local plenary_path = require 'plenary.path'
+          local search_dirs = {}
+          for _, path in ipairs(chosen_files) do
+            search_dirs[#search_dirs + 1] = plenary_path:new(path):make_relative(vim.uv.cwd())
+          end
+          require('telescope.builtin').find_files {
+            prompt_title = string.format('Files in %d paths', #search_dirs),
+            search_dirs = search_dirs,
+          }
+        end,
+      })
+    end, { buffer = yazi_buffer, desc = 'Telescope find files in directory' })
+  end,
 }
 
 vim.api.nvim_create_autocmd('FileType', {

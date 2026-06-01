@@ -5,10 +5,19 @@ if vim.fn.executable 'lazygit' ~= 1 then return end
 vim.pack.add { 'https://github.com/kdheepak/lazygit.nvim' }
 
 -- Uses ~/Library/Application Support/lazygit/config.yml on macOS (see lazygit --print-config-dir)
+-- Diff view uses delta with the github-dark theme (~/.config/delta/github.gitconfig)
 
 -- lazygit.nvim links LazyGitBorder -> Normal by default, which renders as a white border
--- with tokyonight. Match other Neovim floats instead.
+-- with tokyonight. Match other Neovim floats when using that colorscheme.
+local function using_tokyonight()
+  return (vim.g.colors_name or ''):match '^tokyonight' ~= nil
+end
+
 local function setup_lazygit_highlights()
+  if not using_tokyonight() then
+    return
+  end
+
   vim.api.nvim_set_hl(0, 'LazyGitBorder', { link = 'FloatBorder' })
   vim.api.nvim_set_hl(0, 'LazyGitFloat', { link = 'NormalFloat' })
 end
