@@ -3,8 +3,12 @@
 vim.pack.add { 'https://github.com/mfussenegger/nvim-lint' }
 
 local lint = require 'lint'
+
+-- Replace defaults (jsonlint, vale, hadolint, …) with only tools we install.
+-- See :help lint.linters_by_ft and kickstart comments in this file.
 lint.linters_by_ft = {
-  markdown = { 'markdownlint' }, -- Make sure to install `markdownlint` via mason / npm
+  markdown = { 'markdownlint-cli2' },
+  python = { 'ruff' },
 }
 
 -- To allow other plugins to add linters to require('lint').linters_by_ft,

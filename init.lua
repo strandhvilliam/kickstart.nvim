@@ -86,10 +86,16 @@ do
   -- See `:help 'confirm'`
   vim.o.confirm = true
 
+  -- Reload file contents when changed on disk (git pull, agents, external editors)
+  vim.o.autoread = true
+
   -- [[ Basic Keymaps ]]
   --  See `:help vim.keymap.set()`
-  -- VS Code-style save
+  -- VS Code-style save (when the terminal forwards <D-s>)
   vim.keymap.set({ 'n', 'i', 'v' }, '<D-s>', '<cmd>write<CR>', { desc = 'Save file' })
+  vim.keymap.set('n', '<leader>wd', '<cmd>bdelete<CR>', { desc = '[W]indow: [D]elete buffer' })
+  vim.keymap.set('n', '<S-l>', '<cmd>bnext<CR>', { desc = '[B]uffer: [N]ext' })
+  vim.keymap.set('n', '<S-h>', '<cmd>bprevious<CR>', { desc = '[B]uffer: [P]revious' })
 
   -- Allows <C-d> and <C-u> to keep cursor in middle
   vim.keymap.set('n', '<C-d>', '<C-d>zz')
@@ -152,8 +158,8 @@ do
     else
       vim.cmd.normal { 'qq', bang = true }
     end
-  end, { desc = 'Macro: toggle record (q register)' })
-  vim.keymap.set('n', '<leader>mp', '@q', { desc = 'Macro: play q register' })
+  end, { desc = '[M]acro: [Q]ueue toggle record' })
+  vim.keymap.set('n', '<leader>mp', '@q', { desc = '[M]acro: [P]lay q register' })
 
   -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
   -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -194,6 +200,17 @@ do
     desc = 'Highlight when yanking (copying) text',
     group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
     callback = function() vim.hl.on_yank() end,
+  })
+
+  -- `:checktime` triggers autoread; these events cover focus, buffer switches, and idle time
+  vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+    desc = 'Reload buffers changed on disk',
+    group = vim.api.nvim_create_augroup('kickstart-autoread', { clear = true }),
+    callback = function()
+      if vim.fn.getcmdwintype() == '' then
+        vim.cmd 'checktime'
+      end
+    end,
   })
 end
 
@@ -322,8 +339,10 @@ do
     spec = {
       { '<leader>g', group = '[G]it' },
       { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
+      { '<leader>w', group = '[W]indow' },
+      { '<leader>m', group = '[M]acro' },
       { '<leader>t', group = '[T]oggle' },
-      { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } }, -- Enable gitsigns recommended keymaps first
+      { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       { 'gr', group = 'LSP Actions', mode = { 'n' } },
     },
   }
@@ -437,15 +456,12 @@ do
 
   -- See `:help telescope` and `:help telescope.setup()`
   require('telescope').setup {
-    -- You can put your default mappings / updates / etc. in here
-    --  All the info you're looking for is in `:help telescope.setup()`
-    --
-    -- defaults = {
-    --   mappings = {
-    --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-    --   },
-    -- },
-    -- pickers = {}
+    defaults = {
+      file_ignore_patterns = {
+        'repos/',
+        '%.git/',
+      },
+    },
     extensions = {
       ['ui-select'] = { require('telescope.themes').get_dropdown() },
     },
@@ -641,14 +657,14 @@ do
     -- clangd = {},
     -- gopls = {},
     -- pyright = {},
+    basedpyright = {},
     -- rust_analyzer = {},
     --
     -- Some languages (like typescript) have entire language plugins that can be useful:
     --    https://github.com/pmizio/typescript-tools.nvim
     --
     -- But for many setups, the LSP (`ts_ls`) will work just fine
-    -- ts_ls = {},
-    tsgo = {},
+    ts_ls = {},
 
     stylua = {}, -- Used to format Lua code
 
@@ -706,7 +722,8 @@ do
   -- You can press `g?` for help in this menu.
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
-    -- You can add other tools here that you want Mason to install
+    'ruff',
+    'markdownlint-cli2',
   })
 
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -729,8 +746,7 @@ do
     format_on_save = function(bufnr)
       -- You can specify filetypes to autoformat on save here:
       local enabled_filetypes = {
-        -- lua = true,
-        -- python = true,
+        python = true,
       }
       if enabled_filetypes[vim.bo[bufnr].filetype] then
         return { timeout_ms = 500 }
@@ -743,9 +759,9 @@ do
     },
     -- You can also specify external formatters in here.
     formatters_by_ft = {
+      python = { 'ruff' },
       -- rust = { 'rustfmt' },
       -- Conform can also run multiple formatters sequentially
-      -- python = { "isort", "black" },
       --
       -- You can use 'stop_after_first' to run the first available formatter from the list
       -- javascript = { "prettierd", "prettier", stop_after_first = true },
@@ -915,7 +931,7 @@ do
   --
   -- require 'kickstart.plugins.debug'
   require 'kickstart.plugins.indent_line'
-  -- require 'kickstart.plugins.lint'
+  require 'kickstart.plugins.lint'
   require 'kickstart.plugins.autopairs'
   -- require 'kickstart.plugins.neo-tree'
   require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
